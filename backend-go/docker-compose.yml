@@ -1,0 +1,31 @@
+services:
+  postgresDB:
+    image: postgres:latest
+    container_name: pgDB
+    environment:
+      POSTGRES_USER: user1
+      POSTGRES_PASSWORD: pass123
+      POSTGRES_DB: pgDB
+    ports:
+    - "5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user1 -d pgDB"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+  migrate:
+    image: ghcr.io/kukymbr/goose-docker:latest
+    depends_on:
+      - postgresDB
+    volumes:
+      - ./migrations:/migrations
+    environment:
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: postgres://user1:pass123@postgresDB:5432/pgDB?sslmode=disable
+    command: ["up"]
+    restart: on-failure
+volumes:
+  postgres_data:
