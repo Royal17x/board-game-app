@@ -79,5 +79,4 @@ class AuthState extends ChangeNotifier {
   }
 }
 
-// Глобальный экземпляр состояния
 final authState = AuthState();

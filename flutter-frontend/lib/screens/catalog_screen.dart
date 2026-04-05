@@ -1,3 +1,5 @@
+import 'package:board_game_app/services/games_service.dart';
+import 'package:board_game_app/utils/game_images.dart';
 import 'package:flutter/material.dart';
 import 'package:board_game_app/models/board_game.dart';
 import 'package:board_game_app/services/auth.dart';
@@ -11,120 +13,42 @@ class BoardGameCatalogScreen extends StatefulWidget {
   State<BoardGameCatalogScreen> createState() => _BoardGameCatalogScreenState();
 }
 
-List<String> urlList = [
-  "https://cdn.pixabay.com/photo/2016/11/29/02/05/monopoly-1866978_640.jpg",
-  "https://cdn.pixabay.com/photo/2020/06/08/15/01/catan-5274293_640.jpg",
-  "https://cdn.pixabay.com/photo/2022/09/12/12/50/board-game-7448610_640.jpg",
-  "https://cdn.pixabay.com/photo/2017/05/21/22/17/carcassonne-2332158_640.jpg",
-  "https://cdn.pixabay.com/photo/2019/07/13/07/58/munchkin-4334402_640.jpg",
-  "https://cdn.pixabay.com/photo/2017/08/06/22/01/arkham-horror-2595734_640.jpg",
-  "https://cdn.pixabay.com/photo/2018/03/22/17/07/dixit-3250547_640.jpg",
-  "https://cdn.pixabay.com/photo/2018/09/16/14/29/pandemic-3681351_640.jpg",
-  "https://cdn.pixabay.com/photo/2017/12/16/19/54/codenames-3025182_640.jpg",
-  "https://cdn.pixabay.com/photo/2016/11/18/14/04/mafia-1835471_640.jpg",
-  "https://cdn.pixabay.com/photo/2020/01/27/12/47/uno-4797275_640.jpg",
-  "https://cdn.pixabay.com/photo/2016/03/27/22/23/evolution-1284167_640.jpg",
-  "https://cdn.pixabay.com/photo/2016/11/22/23/44/chess-1851019_640.jpg",
-  "https://cdn.pixabay.com/photo/2019/09/18/15/52/jenga-4487006_640.jpg",
-  "https://cdn.pixabay.com/photo/2016/11/29/04/21/scrabble-1867514_640.jpg",
-  "https://cdn.pixabay.com/photo/2017/01/31/23/14/clue-2028320_640.jpg",
-];
-
-List<String> descriptionList = [
-  "Классическая игра про торговлю недвижимостью.",
-  "Стратегия про строительство поселений и обмен ресурсами.",
-  "Стройте железнодорожные маршруты по всему миру.",
-  "Строительство средневековых замков и дорог.",
-  "Пародия на ролевые игры. Мочи монстров, хапай сокровища.",
-  "Кооперативная игра по мифам Лавкрафта.",
-  "Игра в ассоциации с сюрреалистичными картинками.",
-  "Спасите мир от четырех смертельных болезней.",
-  "Командная игра в слова для шпионов.",
-  "Психологическая ролевая игра с детективным сюжетом.",
-  "Быстрая карточная игра для любой компании.",
-  "Создавайте своих существ и помогайте им выжить.",
-  "Древняя логическая игра.",
-  "Стройте башню и не дайте ей упасть.",
-  "Составляйте слова и зарабатывайте очки.",
-  "Классический детектив. Найдите убийцу.",
-  "Вестерн с перестрелками и скрытыми ролями.",
-  "Российский аналог Dixit с уникальными артами.",
-  "Русская рулетка, только с котятами.",
-  "Развивайте свою цивилизацию и стройте чудеса света.",
-];
-
-List<List<String>> reviewList = [
-  ["Классика!", "Играем всей семьей."],
-  ["Лучшая стратегия.", "Нужно много думать."],
-  ["Очень красивые карты."],
-  ["Простые правила, глубокий геймплей."],
-  ["Весело и быстро."],
-  ["Очень атмосферно.", "Сложно выиграть."],
-  ["Развивает воображение."],
-  ["Отличный кооператив."],
-  ["Идеально для вечеринок."],
-  ["Город засыпает..."],
-  ["Всегда ношу с собой."],
-  ["Познавательно."],
-  ["Для умных."],
-  ["Много эмоций."],
-  ["Увеличивает словарный запас."],
-  ["Интересно разгадывать."],
-  ["Для большой компании."],
-  ["Картинки безумные."],
-  ["Очень смешно."],
-  ["Глубокая стратегия."],
-];
-
-List<String> titleList = [
-  "Монополия",
-  "Колонизаторы (Catan)",
-  "Ticket to Ride",
-  "Каркассон",
-  "Манчкин",
-  "Ужас Аркхэма",
-  "Dixit",
-  "Пандемия",
-  "Кодовые имена",
-  "Мафия",
-  "Uno",
-  "Эволюция",
-  "Шахматы",
-  "Дженга",
-  "Scrabble",
-  "Cluedo",
-  "Бэнг!",
-  "Имаджинариум",
-  "Взрывные котята",
-  "7 Чудес",
-];
-
 class _BoardGameCatalogScreenState extends State<BoardGameCatalogScreen> {
-  List<BoardGame> allGames = List.generate(16, (index) {
-    return BoardGame(
-      id: index + 1,
-      title: titleList[index],
-      imageUrl: urlList[index],
-      description: descriptionList[index],
-      reviews: reviewList[index],
-    );
-  });
-
+  List<BoardGame> allGames = [];
   List<BoardGame> filteredGames = [];
   TextEditingController searchController = TextEditingController();
+  bool _isLoading = true;
+  String? _loadError;
 
   @override
   void initState() {
     super.initState();
-    filteredGames = allGames;
-    // Слушаем изменения авторизации для перерисовки иконки
+    _loadGames();
     authState.addListener(_onAuthStateChanged);
   }
 
-  void _onAuthStateChanged() {
-    if (mounted) {
-      setState(() {});
+  Future<void> _loadGames() async {
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+    try {
+      final games = await gamesService.fetchGames();
+      setState(() {
+        allGames = games;
+        filteredGames = games;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _loadError = 'Ошибка загрузки игр';
+        _isLoading = false;
+      });
     }
+  }
+
+  void _onAuthStateChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -151,7 +75,6 @@ class _BoardGameCatalogScreenState extends State<BoardGameCatalogScreen> {
     });
   }
 
-  // Открыть кабинет или экран логина в зависимости от состояния
   void _openAccountLoginScreen() {
     Navigator.push(
       context,
@@ -162,8 +85,100 @@ class _BoardGameCatalogScreenState extends State<BoardGameCatalogScreen> {
     ).then((_) => setState(() {}));
   }
 
+  void _showAddGameDialog() {
+    final titleCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final imageCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Добавить игру'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleCtrl,
+              decoration: const InputDecoration(labelText: 'Название'),
+            ),
+            TextField(
+              controller: descCtrl,
+              decoration: const InputDecoration(labelText: 'Описание'),
+            ),
+            TextField(
+              controller: imageCtrl,
+              decoration: const InputDecoration(labelText: 'URL картинки'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Отмена'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await gamesService.createGame(
+                  adminId: authState.currentUser!.id,
+                  title: titleCtrl.text.trim(),
+                  description: descCtrl.text.trim(),
+                  imageUrl: imageCtrl.text.trim(),
+                );
+                Navigator.pop(ctx);
+                _loadGames();
+              } catch (e) {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+              }
+            },
+            child: const Text('Добавить'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteGame(int gameId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Удалить игру?'),
+        content: const Text('Это действие нельзя отменить.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Отмена'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Удалить', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      try {
+        await gamesService.deleteGame(
+          adminId: authState.currentUser!.id,
+          gameId: gameId,
+        );
+        _loadGames();
+      } catch (e) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isAdmin = authState.currentUser?.isAdmin ?? false;
+
     return Scaffold(
       appBar: AppBar(
         title: Text("Бронирование игр"),
@@ -216,7 +231,30 @@ class _BoardGameCatalogScreenState extends State<BoardGameCatalogScreen> {
           ),
         ),
       ),
-      body: filteredGames.isEmpty
+      floatingActionButton: isAdmin
+          ? FloatingActionButton.extended(
+              onPressed: _showAddGameDialog,
+              icon: const Icon(Icons.add),
+              label: const Text('Добавить игру'),
+            )
+          : null,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _loadError != null
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_loadError!),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: _loadGames,
+                    child: const Text('Повторить'),
+                  ),
+                ],
+              ),
+            )
+          : filteredGames.isEmpty
           ? Center(child: Text("Игры не найдены"))
           : GridView.builder(
               padding: EdgeInsets.all(10),
@@ -245,17 +283,43 @@ class _BoardGameCatalogScreenState extends State<BoardGameCatalogScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Expanded(
-                          child: Container(
-                            color: Colors.grey[300],
-                            child: Image.network(
-                              game.imageUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Center(
-                                  child: Icon(Icons.image_not_supported),
-                                );
-                              },
-                            ),
+                          child: Stack(
+                            children: [
+                              Container(
+                                color: Colors.grey[300],
+                                child: Image.asset(
+                                  getGameImage(game.id),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Center(
+                                      child: Icon(Icons.image_not_supported),
+                                    );
+                                  },
+                                ),
+                              ),
+                              if (isAdmin)
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: GestureDetector(
+                                    onTap: () => _deleteGame(game.id),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      padding: const EdgeInsets.all(4),
+                                      child: const Icon(
+                                        Icons.delete,
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                         Padding(
