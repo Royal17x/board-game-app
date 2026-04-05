@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:board_game_app/services/auth.dart';
 import 'package:board_game_app/widgets/inforow.dart';
+import 'package:board_game_app/main.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -153,9 +154,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                     Switch(
-                      value: _darkMode,
+                      value: themeNotifier.value == ThemeMode.dark,
                       activeColor: Colors.indigo,
-                      onChanged: (val) => setState(() => _darkMode = val),
+                      onChanged: (val) {
+                        themeNotifier.value = val
+                            ? ThemeMode.dark
+                            : ThemeMode.light;
+                        setState(() {});
+                      },
                     ),
                   ],
                 ),
