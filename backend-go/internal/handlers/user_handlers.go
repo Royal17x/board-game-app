@@ -16,7 +16,6 @@ func NewUserHandler(userRepo *storage.PostgresRepo) *UserHandler {
 		userRepo: userRepo,
 	}
 }
-
 func (u *UserHandler) RegisterUser(c *gin.Context) {
 	type RegisterUserRequest struct {
 		Username string `json:"username" binding:"required"`
@@ -27,7 +26,8 @@ func (u *UserHandler) RegisterUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	user, err := u.userRepo.CreateUser(input.Username, input.Password)
+	// всегда client
+	user, err := u.userRepo.CreateUser(input.Username, input.Password, "client")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

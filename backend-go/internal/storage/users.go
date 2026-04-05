@@ -24,14 +24,19 @@ func (r *PostgresRepo) Close() {
 	r.db.Close()
 }
 
-func (r *PostgresRepo) CreateUser(username, password string) (models.User, error) {
+func (r *PostgresRepo) CreateUser(username, password, role string) (models.User, error) {
 	var user models.User
-	query := `INSERT INTO users (username, password, role) VALUES ($1, $2, 'client') RETURNING id, username, role, created_at`
-	if err := r.db.QueryRow(context.Background(), query, strings.TrimSpace(username), strings.TrimSpace(password)).Scan(&user.Id, &user.Username, &user.Role, &user.CreatedAt); err != nil {
-		return user, err
-	}
-
-	return user, nil
+	query := `
+		INSERT INTO users (username, password, role)
+		VALUES ($1, $2, $3)
+		RETURNING id, username, role, created_at`
+	err := r.db.QueryRow(
+		context.Background(), query,
+		strings.TrimSpace(username),
+		strings.TrimSpace(password),
+		role,
+	).Scan(&user.Id, &user.Username, &user.Role, &user.CreatedAt)
+	return user, err
 }
 
 func (r *PostgresRepo) AllUsers() ([]models.User, error) {
