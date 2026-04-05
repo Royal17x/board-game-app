@@ -3,6 +3,7 @@ package main
 import (
 	"backend-for-flutter/internal/config"
 	"backend-for-flutter/internal/handlers"
+	"backend-for-flutter/internal/middleware"
 	"backend-for-flutter/internal/storage"
 	"context"
 	"log"
@@ -20,22 +21,35 @@ func main() {
 	r := gin.Default()
 	dsn, err := config.LoadConfig()
 	if err != nil {
-		log.Print(err)
-		panic(err)
+		log.Fatal(err)
 	}
 
 	pool, err := pgxpool.New(context.Background(), dsn)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
+
 	}
 	if err := pool.Ping(context.Background()); err != nil {
-		panic(err)
+		log.Fatal(err)
+
 	}
-	usersRepo := storage.NewPostgresRepo(pool)
-	userHandler := handlers.NewUserHandler(usersRepo)
+	repo := storage.NewPostgresRepo(pool)
+	userHandler := handlers.NewUserHandler(repo)
+	gameHandler := handlers.NewGameHandler(repo)
+	reviewHandler := handlers.NewReviewHandler(repo)
 
 	r.POST("/register", userHandler.RegisterUser)
 	r.POST("/login", userHandler.LoginUser)
+	r.GET("/games", gameHandler.GetAllGames)
+	r.GET("/games/:id/reviews", reviewHandler.GetReviews)
+	r.POST("/games/:id/reviews", reviewHandler.CreateReview)
+
+	admin := r.Group("/")
+	admin.Use(middleware.AdminOnly(repo))
+	{
+		admin.POST("/games", gameHandler.CreateGame)
+		admin.DELETE("/games/:id", gameHandler.DeleteGame)
+	}
 
 	serv := http.Server{
 		Handler: r,
