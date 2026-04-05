@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"backend-for-flutter/internal/models"
 	"backend-for-flutter/internal/storage"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,16 +27,12 @@ func (u *UserHandler) RegisterUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	id, err := u.userRepo.CreateUser(input.Username, input.Password)
+	user, err := u.userRepo.CreateUser(input.Username, input.Password)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, models.User{
-		Id:        id,
-		Username:  input.Username,
-		CreatedAt: time.Now(),
-	})
+	c.JSON(http.StatusCreated, user)
 }
 
 func (u *UserHandler) LoginUser(c *gin.Context) {
@@ -60,9 +54,6 @@ func (u *UserHandler) LoginUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid credentials"})
 		return
 	}
-	c.JSON(http.StatusOK, models.User{
-		Id:        user.Id,
-		Username:  user.Username,
-		CreatedAt: user.CreatedAt,
-	})
+	user.Password = ""
+	c.JSON(http.StatusOK, user)
 }
