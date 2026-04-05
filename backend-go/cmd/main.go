@@ -38,15 +38,24 @@ func main() {
 	gameHandler := handlers.NewGameHandler(repo)
 	reviewHandler := handlers.NewReviewHandler(repo)
 	bookingHandler := handlers.NewBookingHandler(repo)
+	favoriteHandler := handlers.NewFavoriteHandler(repo)
 
+	// auth
 	r.POST("/register", userHandler.RegisterUser)
 	r.POST("/login", userHandler.LoginUser)
+	// games
 	r.GET("/games", gameHandler.GetAllGames)
+	// reviews
 	r.GET("/games/:id/reviews", reviewHandler.GetReviews)
 	r.POST("/games/:id/reviews", reviewHandler.CreateReview)
+	// bookings
 	r.POST("/bookings", bookingHandler.CreateBooking)
 	r.GET("/bookings", bookingHandler.GetBookings)
 	r.DELETE("/bookings/:id", bookingHandler.DeleteBooking)
+	// favorites
+	r.GET("/favorites", favoriteHandler.GetFavorites)
+	r.POST("/favorites", favoriteHandler.AddFavorite)
+	r.DELETE("/favorites", favoriteHandler.RemoveFavorite)
 
 	admin := r.Group("/")
 	admin.Use(middleware.AdminOnly(repo))
