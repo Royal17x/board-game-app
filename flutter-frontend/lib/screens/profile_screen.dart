@@ -8,8 +8,8 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Дата входа (фиксируется при открытии экрана)
   final String _loginDate = _formattedNow();
+  bool _darkMode = false;
 
   static String _formattedNow() {
     final now = DateTime.now();
@@ -29,12 +29,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = authState.currentUser;
-    String displayName;
-    if (user!=null){
-      displayName = user.username;
-    } else{
-      displayName = 'Пользователь';
-    }
+    final displayName = user?.username ?? 'Пользователь';
+    final isAdmin = user?.isAdmin ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -52,7 +48,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           children: [
             SizedBox(height: 20),
-            // Ава
             CircleAvatar(
               radius: 55,
               backgroundColor: Colors.indigo.shade100,
@@ -71,13 +66,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 4),
-            Chip(
-              label: Text("Активен"),
-              avatar: Icon(Icons.circle, size: 12, color: Colors.green),
-              backgroundColor: Colors.green.shade50,
+            // +1 чип с ролью рядом с "Активен"
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Chip(
+                  label: Text("Активен"),
+                  avatar: Icon(Icons.circle, size: 12, color: Colors.green),
+                  backgroundColor: Colors.green.shade50,
+                ),
+                SizedBox(width: 8),
+                Chip(
+                  label: Text(isAdmin ? "Администратор" : "Пользователь"),
+                  avatar: Icon(
+                    isAdmin ? Icons.shield : Icons.person,
+                    size: 14,
+                    color: isAdmin ? Colors.orange : Colors.indigo,
+                  ),
+                  backgroundColor: isAdmin
+                      ? Colors.orange.shade50
+                      : Colors.indigo.shade50,
+                ),
+              ],
             ),
             SizedBox(height: 32),
-
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(
@@ -105,13 +117,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       value: "Авторизован",
                       valueColor: Colors.green,
                     ),
+                    Divider(),
+                    // +1 строка InfoRow с ролью
+                    InfoRow(
+                      icon: isAdmin ? Icons.shield : Icons.person_outline,
+                      label: "Роль",
+                      value: isAdmin ? "Администратор" : "Пользователь",
+                      valueColor: isAdmin ? Colors.orange : Colors.indigo,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.dark_mode, color: Colors.indigo, size: 22),
+                        SizedBox(width: 12),
+                        Text(
+                          "Темная тема",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Switch(
+                      value: _darkMode,
+                      activeColor: Colors.indigo,
+                      onChanged: (val) => setState(() => _darkMode = val),
+                    ),
                   ],
                 ),
               ),
             ),
             SizedBox(height: 32),
-
-            // Кнопка выхода
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(

@@ -24,7 +24,7 @@ class GamesService {
       Uri.parse('$_baseUrl/games'),
       headers: {
         'Content-Type': 'application/json',
-        'X-User-Id': adminId.toString(), 
+        'X-User-Id': adminId.toString(),
       },
       body: jsonEncode({
         'title': title,
@@ -45,6 +45,30 @@ class GamesService {
     );
     if (response.statusCode != 200) {
       throw Exception('Ошибка при удалении игры');
+    }
+  }
+
+  Future<void> updateGame({
+    required int adminId,
+    required int gameId,
+    required String title,
+    required String description,
+    required String imageUrl,
+  }) async {
+    final response = await http.put(
+      Uri.parse('$_baseUrl/games/$gameId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Id': adminId.toString(),
+      },
+      body: jsonEncode({
+        'title': title,
+        'description': description,
+        'image_url': imageUrl,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Ошибка при обновлении игры');
     }
   }
 }

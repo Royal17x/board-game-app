@@ -7,6 +7,7 @@ import 'package:board_game_app/screens/game_detail_screen.dart';
 import 'package:board_game_app/screens/profile_screen.dart';
 import 'package:board_game_app/screens/favorite_screen.dart';
 import 'package:board_game_app/screens/login_screen.dart';
+import 'package:board_game_app/screens/booking_screen.dart';
 
 class BoardGameCatalogScreen extends StatefulWidget {
   @override
@@ -19,6 +20,8 @@ class _BoardGameCatalogScreenState extends State<BoardGameCatalogScreen> {
   TextEditingController searchController = TextEditingController();
   bool _isLoading = true;
   String? _loadError;
+  String _sortMode = 'default';
+  int _visibleCount = 5;
 
   @override
   void initState() {
@@ -37,6 +40,8 @@ class _BoardGameCatalogScreenState extends State<BoardGameCatalogScreen> {
       setState(() {
         allGames = games;
         filteredGames = games;
+        _applySort(allGames);
+        filteredGames = List.from(allGames);
         _isLoading = false;
       });
     } catch (e) {
@@ -58,6 +63,12 @@ class _BoardGameCatalogScreenState extends State<BoardGameCatalogScreen> {
     super.dispose();
   }
 
+  void _applySort(List<BoardGame> games) {
+    if (_sortMode == "name") {
+      games.sort((a, b) => a.title.compareTo(b.title));
+    }
+  }
+
   void _runFilter(String enteredKeyword) {
     List<BoardGame> results = [];
     if (enteredKeyword.isEmpty) {
@@ -69,6 +80,7 @@ class _BoardGameCatalogScreenState extends State<BoardGameCatalogScreen> {
                 game.title.toLowerCase().contains(enteredKeyword.toLowerCase()),
           )
           .toList();
+      _applySort(allGames);
     }
     setState(() {
       filteredGames = results;
@@ -183,6 +195,15 @@ class _BoardGameCatalogScreenState extends State<BoardGameCatalogScreen> {
       appBar: AppBar(
         title: Text("Бронирование игр"),
         actions: [
+          if (authState.isLoggedIn)
+            IconButton(
+              icon: const Icon(Icons.bookmark),
+              tooltip: 'Мои бронирования',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => BookingsScreen()),
+              ),
+            ),
           IconButton(
             icon: Icon(Icons.favorite),
             onPressed: () {
@@ -239,123 +260,199 @@ class _BoardGameCatalogScreenState extends State<BoardGameCatalogScreen> {
             )
           : null,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : _loadError != null
           ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(_loadError!),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   ElevatedButton(
                     onPressed: _loadGames,
-                    child: const Text('Повторить'),
+                    child: Text('Повторить'),
                   ),
                 ],
               ),
             )
-          : filteredGames.isEmpty
-          ? Center(child: Text("Игры не найдены"))
-          : GridView.builder(
-              padding: EdgeInsets.all(10),
-              itemCount: filteredGames.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 0.7,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-              ),
-              itemBuilder: (context, index) {
-                final game = filteredGames[index];
-                return GestureDetector(
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => GameDetailScreen(game: game),
+          : Column(
+              children: [
+                // Панель сортировки
+                Container(
+                  color: Colors.grey[100],
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  child: Row(
+                    children: [
+                      Text('Сортировка:', style: TextStyle(fontSize: 13)),
+                      Radio<String>(
+                        value: 'default',
+                        groupValue: _sortMode,
+                        activeColor: Colors.indigo,
+                        onChanged: (val) {
+                          setState(() {
+                            _sortMode = val!;
+                            _visibleCount = 5;
+                          });
+                          _loadGames();
+                        },
                       ),
-                    );
-                    setState(() {});
-                  },
-                  child: Card(
-                    elevation: 4,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(
-                          child: Stack(
-                            children: [
-                              Container(
-                                color: Colors.grey[300],
-                                child: Image.asset(
-                                  getGameImage(game.id),
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Center(
-                                      child: Icon(Icons.image_not_supported),
-                                    );
-                                  },
-                                ),
+                      Text('По умолчанию', style: TextStyle(fontSize: 13)),
+                      Radio<String>(
+                        value: 'name',
+                        groupValue: _sortMode,
+                        activeColor: Colors.indigo,
+                        onChanged: (val) {
+                          setState(() {
+                            _sortMode = val!;
+                            _visibleCount = 5;
+                            final sorted = List<BoardGame>.from(allGames)
+                              ..sort((a, b) => a.title.compareTo(b.title));
+                            filteredGames = sorted;
+                          });
+                        },
+                      ),
+                      Text('По названию', style: TextStyle(fontSize: 13)),
+                    ],
+                  ),
+                ),
+                // Сетка игр
+                Expanded(
+                  child: filteredGames.isEmpty
+                      ? Center(child: Text('Игры не найдены'))
+                      : GridView.builder(
+                          padding: EdgeInsets.all(10),
+                          itemCount: filteredGames.length > _visibleCount
+                              ? _visibleCount + 1
+                              : filteredGames.length,
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                childAspectRatio: 0.7,
+                                crossAxisSpacing: 10,
+                                mainAxisSpacing: 10,
                               ),
-                              if (isAdmin)
-                                Positioned(
-                                  top: 4,
-                                  right: 4,
-                                  child: GestureDetector(
-                                    onTap: () => _deleteGame(game.id),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.red,
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      padding: const EdgeInsets.all(4),
-                                      child: const Icon(
-                                        Icons.delete,
-                                        color: Colors.white,
-                                        size: 16,
-                                      ),
-                                    ),
+                          itemBuilder: (context, index) {
+                            // Кнопка "Показать ещё"
+                            if (index == _visibleCount &&
+                                filteredGames.length > _visibleCount) {
+                              return Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: ElevatedButton(
+                                    onPressed: () =>
+                                        setState(() => _visibleCount += 5),
+                                    child: Text('Показать ещё'),
                                   ),
                                 ),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            children: [
-                              Text(
-                                game.title,
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              SizedBox(height: 5),
-                              IconButton(
-                                icon: Icon(
-                                  game.isFavorite
-                                      ? Icons.favorite
-                                      : Icons.favorite_border,
-                                  color: game.isFavorite
-                                      ? Colors.red
-                                      : Colors.grey,
+                              );
+                            }
+
+                            final game = filteredGames[index];
+                            return GestureDetector(
+                              onTap: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        GameDetailScreen(game: game),
+                                  ),
+                                );
+                                setState(() {});
+                              },
+                              child: Card(
+                                elevation: 4,
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(
+                                      child: Stack(
+                                        children: [
+                                          Container(
+                                            color: Colors.grey[300],
+                                            child: Image.asset(
+                                              getGameImage(game.id),
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                    return Center(
+                                                      child: Icon(
+                                                        Icons
+                                                            .image_not_supported,
+                                                      ),
+                                                    );
+                                                  },
+                                            ),
+                                          ),
+                                          if (isAdmin)
+                                            Positioned(
+                                              top: 4,
+                                              right: 4,
+                                              child: GestureDetector(
+                                                onTap: () =>
+                                                    _deleteGame(game.id),
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.red,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          20,
+                                                        ),
+                                                  ),
+                                                  padding: EdgeInsets.all(4),
+                                                  child: Icon(
+                                                    Icons.delete,
+                                                    color: Colors.white,
+                                                    size: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            game.title,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          SizedBox(height: 5),
+                                          IconButton(
+                                            icon: Icon(
+                                              game.isFavorite
+                                                  ? Icons.favorite
+                                                  : Icons.favorite_border,
+                                              color: game.isFavorite
+                                                  ? Colors.red
+                                                  : Colors.grey,
+                                            ),
+                                            onPressed: () {
+                                              setState(() {
+                                                game.isFavorite =
+                                                    !game.isFavorite;
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                onPressed: () {
-                                  setState(() {
-                                    game.isFavorite = !game.isFavorite;
-                                  });
-                                },
                               ),
-                            ],
-                          ),
+                            );
+                          },
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+                ),
+              ],
             ),
     );
   }
