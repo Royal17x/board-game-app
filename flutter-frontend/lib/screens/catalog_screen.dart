@@ -5,10 +5,10 @@ import 'package:board_game_app/models/board_game.dart';
 import 'package:board_game_app/services/auth.dart';
 import 'package:board_game_app/screens/game_detail_screen.dart';
 import 'package:board_game_app/screens/profile_screen.dart';
-import 'package:board_game_app/screens/favorite_screen.dart';
 import 'package:board_game_app/screens/login_screen.dart';
 import 'package:board_game_app/screens/booking_screen.dart';
 import 'package:board_game_app/services/favorites_service.dart';
+import 'package:board_game_app/screens/favorite_screen.dart';
 
 class BoardGameCatalogScreen extends StatefulWidget {
   @override
@@ -214,6 +214,22 @@ class _BoardGameCatalogScreenState extends State<BoardGameCatalogScreen> {
                 MaterialPageRoute(builder: (_) => BookingsScreen()),
               ),
             ),
+          IconButton(
+            icon: Icon(Icons.favorite),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FavoritesScreen(
+                    allGames: allGames,
+                    onToggleFavorite: () {
+                      setState(() {});
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(
               authState.isLoggedIn ? Icons.account_circle : Icons.login,
