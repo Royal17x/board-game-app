@@ -29,9 +29,13 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
   String? _bookingMessage;
   bool _bookingSuccess = false;
 
+  // Для редактирования
+  late BoardGame _game;
+
   @override
   void initState() {
     super.initState();
+    _game = widget.game;
     _loadReviews();
   }
 
@@ -113,9 +117,9 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
   }
 
   void _showEditDialog() {
-    final titleCtrl = TextEditingController(text: widget.game.title);
-    final descCtrl = TextEditingController(text: widget.game.description);
-    final imageCtrl = TextEditingController(text: widget.game.imageUrl);
+    final titleCtrl = TextEditingController(text: _game.title);
+    final descCtrl = TextEditingController(text: _game.description);
+    final imageCtrl = TextEditingController(text: _game.imageUrl);
 
     showDialog(
       context: context,
@@ -154,9 +158,18 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
                   imageUrl: imageCtrl.text.trim(),
                 );
                 Navigator.pop(ctx);
+                setState(() {
+                  _game = BoardGame(
+                    id: _game.id,
+                    title: titleCtrl.text.trim(),
+                    description: descCtrl.text.trim(),
+                    imageUrl: imageCtrl.text.trim(),
+                    isFavorite: _game.isFavorite,
+                  );
+                });
                 ScaffoldMessenger.of(
                   context,
-                ).showSnackBar(const SnackBar(content: Text('Игра обновлена')));
+                ).showSnackBar(SnackBar(content: Text('Игра обновлена')));
               } catch (e) {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(
@@ -175,7 +188,7 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.game.title),
+        title: Text(_game.title),
         actions: [
           if (authState.currentUser?.isAdmin ?? false)
             IconButton(
@@ -212,17 +225,14 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
                 children: [
                   // Название и описание
                   Text(
-                    widget.game.title,
+                    _game.title,
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Text(
-                    widget.game.description,
-                    style: const TextStyle(fontSize: 16),
-                  ),
+                  Text(_game.description, style: const TextStyle(fontSize: 16)),
                   const SizedBox(height: 20),
                   const Divider(),
 

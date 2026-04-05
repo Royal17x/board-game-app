@@ -8,6 +8,7 @@ import 'package:board_game_app/screens/profile_screen.dart';
 import 'package:board_game_app/screens/favorite_screen.dart';
 import 'package:board_game_app/screens/login_screen.dart';
 import 'package:board_game_app/screens/booking_screen.dart';
+import 'package:board_game_app/services/favorites_service.dart';
 
 class BoardGameCatalogScreen extends StatefulWidget {
   @override
@@ -37,6 +38,15 @@ class _BoardGameCatalogScreenState extends State<BoardGameCatalogScreen> {
     });
     try {
       final games = await gamesService.fetchGames();
+      if (authState.isLoggedIn) {
+        final favs = await favoritesService.fetchFavorites(
+          authState.currentUser!.id,
+        );
+        final favIds = favs.map((g) => g.id).toSet();
+        for (final g in games) {
+          g.isFavorite = favIds.contains(g.id);
+        }
+      }
       setState(() {
         allGames = games;
         filteredGames = games;
@@ -205,22 +215,6 @@ class _BoardGameCatalogScreenState extends State<BoardGameCatalogScreen> {
               ),
             ),
           IconButton(
-            icon: Icon(Icons.favorite),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => FavoritesScreen(
-                    allGames: allGames,
-                    onToggleFavorite: () {
-                      setState(() {});
-                    },
-                  ),
-                ),
-              );
-            },
-          ),
-          IconButton(
             icon: Icon(
               authState.isLoggedIn ? Icons.account_circle : Icons.login,
               color: authState.isLoggedIn ? Colors.amber : null,
@@ -357,6 +351,7 @@ class _BoardGameCatalogScreenState extends State<BoardGameCatalogScreen> {
                                         GameDetailScreen(game: game),
                                   ),
                                 );
+                                _loadGames();
                                 setState(() {});
                               },
                               child: Card(
@@ -435,11 +430,37 @@ class _BoardGameCatalogScreenState extends State<BoardGameCatalogScreen> {
                                                   ? Colors.red
                                                   : Colors.grey,
                                             ),
-                                            onPressed: () {
-                                              setState(() {
-                                                game.isFavorite =
-                                                    !game.isFavorite;
-                                              });
+                                            onPressed: () async {
+                                              if (!authState.isLoggedIn) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      'Войдите, чтобы добавить в избранное',
+                                                    ),
+                                                  ),
+                                                );
+                                                return;
+                                              }
+                                              final newValue = !game.isFavorite;
+                                              setState(
+                                                () =>
+                                                    game.isFavorite = newValue,
+                                              );
+                                              if (newValue) {
+                                                await favoritesService
+                                                    .addFavorite(
+                                                      authState.currentUser!.id,
+                                                      game.id,
+                                                    );
+                                              } else {
+                                                await favoritesService
+                                                    .removeFavorite(
+                                                      authState.currentUser!.id,
+                                                      game.id,
+                                                    );
+                                              }
                                             },
                                           ),
                                         ],

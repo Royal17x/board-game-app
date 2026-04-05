@@ -10,7 +10,6 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final String _loginDate = _formattedNow();
-  bool _darkMode = false;
 
   static String _formattedNow() {
     final now = DateTime.now();
