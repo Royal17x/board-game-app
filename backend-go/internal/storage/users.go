@@ -24,14 +24,14 @@ func (r *PostgresRepo) Close() {
 	r.db.Close()
 }
 
-func (r *PostgresRepo) CreateUser(username, password string) (int, error) {
-	var id int
-	query := `INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id`
-	if err := r.db.QueryRow(context.Background(), query, strings.TrimSpace(username), strings.TrimSpace(password)).Scan(&id); err != nil {
-		return 0, err
+func (r *PostgresRepo) CreateUser(username, password string) (models.User, error) {
+	var user models.User
+	query := `INSERT INTO users (username, password, role) VALUES ($1, $2, 'client') RETURNING id, username, role, created_at`
+	if err := r.db.QueryRow(context.Background(), query, strings.TrimSpace(username), strings.TrimSpace(password)).Scan(&user.Id, &user.Username, &user.Role, &user.CreatedAt); err != nil {
+		return user, err
 	}
 
-	return id, nil
+	return user, nil
 }
 
 func (r *PostgresRepo) AllUsers() ([]models.User, error) {
@@ -64,13 +64,27 @@ func (r *PostgresRepo) DeleteUser(id int) (int, error) {
 
 func (r *PostgresRepo) GetUserByLogin(username string) (models.User, error) {
 	var user models.User
-	query := `SELECT id, username, password, created_at FROM users WHERE username = $1`
-	if err := r.db.QueryRow(context.Background(), query, strings.TrimSpace(username)).Scan(&user.Id, &user.Username, &user.Password, &user.CreatedAt); err != nil {
+	query := `SELECT id, username, password, role, created_at FROM users WHERE username = $1`
+	if err := r.db.QueryRow(context.Background(), query, strings.TrimSpace(username)).Scan(&user.Id, &user.Username, &user.Password, &user.Role, &user.CreatedAt); err != nil {
 		if err == pgx.ErrNoRows {
 			return user, errors.New("user not found")
 		} else {
 			return user, err
 		}
+	}
+	return user, nil
+}
+
+func (r *PostgresRepo) GetUserById(id int) (models.User, error) {
+	var user models.User
+	query := `SELECT id, username, role, created_at FROM users WHERE id = $1`
+	err := r.db.QueryRow(context.Background(), query, id).
+		Scan(&user.Id, &user.Username, &user.Role, &user.CreatedAt)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return user, errors.New("user not found")
+		}
+		return user, err
 	}
 	return user, nil
 }
