@@ -53,6 +53,7 @@ func main() {
 	{
 		admin.POST("/games", gameHandler.CreateGame)
 		admin.DELETE("/games/:id", gameHandler.DeleteGame)
+		admin.PUT("/games/:id", gameHandler.UpdateGame)
 	}
 
 	serv := http.Server{
