@@ -46,3 +46,17 @@ func (r *PostgresRepo) DeleteGame(id int) error {
 	}
 	return nil
 }
+
+func (r *PostgresRepo) UpdateGame(id int, title, description, imageUrl string) (models.BoardGame, error) {
+	var game models.BoardGame
+	query := `
+		UPDATE board_games
+		SET title=$1, description=$2, image_url=$3
+		WHERE id=$4
+		RETURING id, title, description, image_url, created_at
+	`
+	err := r.db.QueryRow(context.Background(), query,
+		title, description, imageUrl, id,
+	).Scan(&game.Id, &game.Title, &game.Description, &game.ImageUrl, &game.CreatedAt)
+	return game, err
+}

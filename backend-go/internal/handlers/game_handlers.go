@@ -61,3 +61,26 @@ func (h *GameHandler) DeleteGame(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"deleted_id": id})
 }
+
+func (h *GameHandler) UpdateGame(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid game id"})
+		return
+	}
+	var input struct {
+		Title       string `json:"title" binding:"required"`
+		Description string `json:"description" binding:"required"`
+		ImageUrl    string `json:"image_url"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	game, err := h.repo.UpdateGame(id, input.Title, input.Description, input.ImageUrl)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, game)
+}
