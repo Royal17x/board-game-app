@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"backend-for-flutter/internal/storage"
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -28,7 +27,7 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 	}
 	booking, err := h.repo.CreateBooking(input.UserId, input.GameId)
 	if err != nil {
-		if err == errors.New("already booked") {
+		if err == storage.ErrAlreadyBooked {
 			c.JSON(http.StatusConflict, gin.H{"error": "Игра уже забронирована"})
 			return
 		}
@@ -65,7 +64,7 @@ func (h *BookingHandler) DeleteBooking(c *gin.Context) {
 		return
 	}
 	if err := h.repo.DeleteBooking(userId, bookingId); err != nil {
-		if err == errors.New("already booked") {
+		if err == storage.ErrAlreadyBooked {
 			c.JSON(http.StatusNotFound, gin.H{"error": "booking not found"})
 			return
 		}

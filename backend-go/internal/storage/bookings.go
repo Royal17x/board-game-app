@@ -3,7 +3,6 @@ package storage
 import (
 	"backend-for-flutter/internal/models"
 	"context"
-	"errors"
 )
 
 func (r *PostgresRepo) CreateBooking(userId, gameId int) (models.Booking, error) {
@@ -16,7 +15,7 @@ func (r *PostgresRepo) CreateBooking(userId, gameId int) (models.Booking, error)
 		return models.Booking{}, err
 	}
 	if count > 0 {
-		return models.Booking{}, errors.New("already booked")
+		return models.Booking{}, ErrAlreadyBooked
 	}
 
 	var booking models.Booking
@@ -61,7 +60,7 @@ func (r *PostgresRepo) DeleteBooking(userId, bookingId int) error {
 		return err
 	}
 	if result.RowsAffected() == 0 {
-		return errors.New("already booked")
+		return ErrNotFound
 	}
 	return nil
 }

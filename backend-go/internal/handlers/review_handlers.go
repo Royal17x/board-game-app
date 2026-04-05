@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"backend-for-flutter/internal/storage"
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -49,7 +48,7 @@ func (h *ReviewHandler) CreateReview(c *gin.Context) {
 
 	review, err := h.repo.CreateReview(gameId, input.UserId, input.Text)
 	if err != nil {
-		if err == errors.New("reviews limit reached") {
+		if err == storage.ErrReviewLimit {
 			c.JSON(http.StatusTooManyRequests, gin.H{"error": "review was already sent on this game"})
 			return
 		}

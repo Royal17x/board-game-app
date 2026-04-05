@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"backend-for-flutter/internal/storage"
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -52,7 +51,7 @@ func (h *GameHandler) DeleteGame(c *gin.Context) {
 		return
 	}
 	if err := h.repo.DeleteGame(id); err != nil {
-		if err == errors.New("game not found") {
+		if err == storage.ErrNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "game not found"})
 			return
 		}

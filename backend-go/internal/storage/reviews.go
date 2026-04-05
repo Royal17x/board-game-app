@@ -3,7 +3,6 @@ package storage
 import (
 	"backend-for-flutter/internal/models"
 	"context"
-	"errors"
 )
 
 func (r *PostgresRepo) GetReviewsByGame(gameId int) ([]models.Review, error) {
@@ -36,7 +35,7 @@ func (r *PostgresRepo) CreateReview(gameId, userId int, text string) (models.Rev
 		return models.Review{}, err
 	}
 	if count >= 1 {
-		return models.Review{}, errors.New("reviews limit reached")
+		return models.Review{}, ErrReviewLimit
 	}
 
 	var rv models.Review
