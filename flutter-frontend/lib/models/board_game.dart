@@ -3,7 +3,6 @@ class BoardGame {
   final String title;
   final String description;
   bool isFavorite;
-  List<String> reviews;
   final String imageUrl;
 
   BoardGame({
@@ -11,7 +10,15 @@ class BoardGame {
     required this.title,
     required this.description,
     this.isFavorite = false,
-    required this.reviews,
     required this.imageUrl,
   });
+
+  factory BoardGame.fromJson(Map<String, dynamic> json) {
+    return BoardGame(
+      id: json['id'] ?? 0,
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      imageUrl: json['image_url'] ?? '',
+    );
+  }
 }

@@ -75,6 +75,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         context,
         MaterialPageRoute(builder: (context) => ProfileScreen()),
       );
+    } else {
+      setState(() {
+        _errorMessage =
+            "Ошибка регистрации (возможно пользователь уже существует)";
+      });
     }
   }
 
